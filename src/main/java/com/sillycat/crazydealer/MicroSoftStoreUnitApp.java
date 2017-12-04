@@ -1,5 +1,6 @@
 package com.sillycat.crazydealer;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
@@ -11,20 +12,22 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
-import com.gargoylesoftware.htmlunit.html.HtmlEmailInput;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlPasswordInput;
-import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 
 public class MicroSoftStoreUnitApp {
 
 	private final static Logger logger = LoggerFactory.getLogger(MicroSoftStoreUnitApp.class);
 
+	private final static String HOME_URL = "https://www.microsoft.com";
 	private final static String ITEM_URL = "https://www.microsoft.com/en-us/store/d/surface-mouse/8qbtdr3q4rpw/935j?activetab=pivot:overviewtab";
 
 	public static void main(String[] args) {
 		logger.info("Start to init the HTTP Client---------");
+		// turn off htmlunit warnings
+	    java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(java.util.logging.Level.OFF);
+	    java.util.logging.Logger.getLogger("org.apache.http").setLevel(java.util.logging.Level.OFF);
+
 		// BEST_SUPPORTED, CHROME, EDGE, FIREFOX_45, FIREFOX_52,
 		// INTERNET_EXPLORER
 		final WebClient webClient = new WebClient(BrowserVersion.CHROME);
@@ -48,6 +51,32 @@ public class MicroSoftStoreUnitApp {
 				return true;
 			}
 		});
+		logger.info("Start to init the HTTP Client---------done");
+
+		try {
+			webClient.getPage(HOME_URL);
+			HtmlPage itemPage = webClient.getPage(ITEM_URL);
+			HtmlButton addToCartButton = itemPage.getHtmlElementById("PhysicalGoodIdentityBuyButton");
+			logger.info("addToCartButton:" + addToCartButton.asText());
+			HtmlPage cartPage = addToCartButton.click();
+
+			logger.info("*************************************************************************************");
+			logger.debug(cartPage.asXml());
+			byte data[] = cartPage.asXml().getBytes();
+			FileOutputStream out = new FileOutputStream("/Users/carl/Downloads/picture/cartPage.html");
+			out.write(data);
+			out.close();
+			logger.info("*************************************************************************************");
+
+		} catch (FailingHttpStatusCodeException e) {
+			logger.error("MicroSoftStore Error:", e);
+		} catch (MalformedURLException e) {
+			logger.error("MicroSoftStore Error:", e);
+		} catch (IOException e) {
+			logger.error("MicroSoftStore Error:", e);
+		} finally{
+			webClient.close();
+		}
 
 		// try {
 		// webClient.getPage(HOME_URL);
